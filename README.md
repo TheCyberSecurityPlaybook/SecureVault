@@ -2,6 +2,7 @@
 SecureVault — менеджер паролей
 Создано веб-приложение index.html с такими возможностями:
 
+# Local storage
 Шифрование
 AES-256-GCM для шифрования данных
 PBKDF2 с 600 000 итераций (NIST, OWASP)
@@ -25,6 +26,8 @@ PBKDF2 с 600 000 итераций (NIST, OWASP)
 
 
 pass:12345
+
+# File storage
 
 
 Изменения
