@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SecureVault — менеджер паролей с AES-256-GCM шифрованием">
+    <title>SecureVault — Менеджер паролей</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #3fb950;
+            --accent-dim: #238636;
+            --warning: #d29922;
+            --danger: #f85149;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .app {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .header h1 .icon {
+            color: var(--accent);
+        }
+
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(63, 185, 80, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dim);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .btn-outline:hover {
+            background: rgba(63, 185, 80, 0.15);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: rgba(248, 81, 73, 0.15);
+        }
+
+        .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-wrapper input {
+            padding-left: 2.5rem;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .category-chip {
+            padding: 0.35rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .category-chip:hover, .category-chip.active {
+            background: rgba(63, 185, 80, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .entries-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .entry-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: border-color 0.15s;
+        }
+
+        .entry-item:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .entry-info h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .entry-info .username {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .category-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .entry-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .password-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-right: 0.5rem;
+        }
+
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .action-btn.copy:hover { color: var(--accent); }
+        .action-btn.edit:hover { color: var(--accent); }
+        .action-btn.delete:hover { color: var(--danger); border-color: var(--danger); }
+
+        .entry-form {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .entry-form .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .entry-form .form-row { grid-template-columns: 1fr; }
+        }
+
+        .form-actions { display: flex; gap: 0.75rem; margin-top: 0.5rem; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .modal h3 {
+            margin-bottom: 1.25rem;
+            font-size: 1.1rem;
+        }
+
+        .strength-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s, background 0.3s;
+        }
+
+        .strength-weak { background: var(--danger); }
+        .strength-fair { background: var(--warning); }
+        .strength-good { background: #58a6ff; }
+        .strength-strong { background: var(--accent); }
+
+        .file-input-hidden { display: none; }
+
+        .import-export-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 0.5rem; }
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1><i class="fas fa-shield-halved icon"></i> SecureVault</h1>
+            <p class="subtitle">AES-256-GCM · PBKDF2 600k · Локальное шифрование</p>
+        </header>
+
+        <div id="authBlock" class="card">
+            <h3 class="card-title" id="authTitle">Вход в хранилище</h3>
+            <div class="mb-3">
+                <label class="form-label" for="masterInput">Мастер-пароль</label>
+                <input type="password" class="form-control" id="masterInput" placeholder="Введите мастер-пароль" autocomplete="current-password">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="unlockBtn">Разблокировать</button>
+                <button class="btn btn-secondary hidden" id="setupBtn">Создать хранилище</button>
+            </div>
+            <div id="authError" class="error-msg"></div>
+        </div>
+
+        <div id="vaultBlock" class="hidden">
+            <div class="toolbar">
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Поиск по названию, логину, категории...">
+                </div>
+                <div class="category-filter" id="categoryFilter"></div>
+            </div>
+
+            <div class="toolbar" style="justify-content: space-between; flex-wrap: wrap;">
+                <div class="import-export-row">
+                    <button class="btn btn-outline btn-sm" id="exportYandexBtn" title="Без шифрования, для импорта в браузер"><i class="fab fa-yandex"></i> Экспорт для Яндекса</button>
+                    <button class="btn btn-outline btn-sm" id="importYandexBtn"><i class="fab fa-yandex"></i> Импорт из Яндекса</button>
+                    <button class="btn btn-secondary btn-sm" id="exportJsonBtn" title="Зашифрованный экспорт"><i class="fas fa-file-export"></i> JSON (шифр.)</button>
+                    <button class="btn btn-secondary btn-sm" id="exportCsvBtn" title="Зашифрованный экспорт"><i class="fas fa-file-csv"></i> CSV (шифр.)</button>
+                    <button class="btn btn-secondary btn-sm" id="importJsonBtn"><i class="fas fa-file-import"></i> Импорт JSON</button>
+                    <button class="btn btn-secondary btn-sm" id="importCsvBtn"><i class="fas fa-file-import"></i> Импорт CSV</button>
+                </div>
+                <div>
+                    <button class="btn btn-primary btn-sm" id="addBtn"><i class="fas fa-plus"></i> Добавить</button>
+                    <button class="btn btn-secondary btn-sm" id="changeMasterBtn"><i class="fas fa-key"></i> Сменить мастер-пароль</button>
+                    <button class="btn btn-danger btn-sm" id="clearAllBtn" title="Удалить все записи"><i class="fas fa-trash-can"></i> Очистить всё</button>
+                </div>
+            </div>
+
+            <input type="file" class="file-input-hidden" id="fileInput" accept=".csv,.json,application/json">
+
+            <div id="entryFormCard" class="card hidden">
+                <h3 class="card-title" id="formTitle">Новая запись</h3>
+                <form id="entryForm" class="entry-form">
+                    <input type="hidden" id="entryId">
+                    <div>
+                        <label class="form-label" for="entryName">Сайт / Название</label>
+                        <input type="text" class="form-control" id="entryName" placeholder="example.com" required>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label" for="entryUsername">Логин</label>
+                            <input type="text" class="form-control" id="entryUsername" placeholder="user@email.com">
+                        </div>
+                        <div>
+                            <label class="form-label" for="entryPassword">Пароль</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" class="form-control" id="entryPassword" placeholder="••••••••">
+                                <button type="button" class="btn btn-outline" id="genBtn" title="Генератор"><i class="fas fa-wand-magic-sparkles"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label" for="entryCategory">Категория</label>
+                        <input type="text" class="form-control" id="entryCategory" placeholder="Работа, Личное, Соцсети...">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Отмена</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="entriesList" class="entries-list"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="genModal">
+        <div class="modal">
+            <h3><i class="fas fa-wand-magic-sparkles" style="color: var(--accent);"></i> Генератор паролей</h3>
+            <div class="mb-3">
+                <label class="form-label">Длина: <span id="lenVal">20</span></label>
+                <input type="range" class="form-control" id="genLen" min="12" max="64" value="20">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                <label><input type="checkbox" id="genUpper" checked> A-Z</label>
+                <label><input type="checkbox" id="genLower" checked> a-z</label>
+                <label><input type="checkbox" id="genNum" checked> 0-9</label>
+                <label><input type="checkbox" id="genSym" checked> !@#$%^&*</label>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Пароль</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" class="form-control" id="genOut" readonly style="font-family: 'JetBrains Mono', monospace;">
+                    <button class="btn btn-outline" id="genCopy"><i class="fas fa-copy"></i></button>
+                </div>
+                <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="genUse"><i class="fas fa-check"></i> Использовать</button>
+                <button class="btn btn-secondary" id="genClose">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PBKDF2_ITERATIONS = 600000;
+        const STORAGE_KEY = 'securevault_data';
+
+        async function deriveKey(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+                keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encrypt(plaintext, password) {
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const key = await deriveKey(password, salt);
+            const enc = new TextEncoder();
+            const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+            return {
+                salt: b64encode(salt), iv: b64encode(iv), data: b64encode(new Uint8Array(ct))
+            };
+        }
+
+        async function decrypt(obj, password) {
+            const salt = b64decode(obj.salt);
+            const iv = b64decode(obj.iv);
+            const data = b64decode(obj.data);
+            const key = await deriveKey(password, salt);
+            try {
+                const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+                return new TextDecoder().decode(pt);
+            } catch {
+                throw new Error('Неверный мастер-пароль или повреждённые данные');
+            }
+        }
+
+        function b64encode(arr) { return btoa(String.fromCharCode(...arr)); }
+        function b64decode(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+
+        function getStored() { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : null; }
+        function setStored(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+
+        async function loadVault(pw) {
+            const s = getStored();
+            if (!s) return [];
+            const text = await decrypt(s, pw);
+            return JSON.parse(text).map(e => ({ category: '', ...e }));
+        }
+
+        async function saveVault(entries, pw) {
+            const enc = await encrypt(JSON.stringify(entries), pw);
+            setStored(enc);
+        }
+
+        function generatePassword(len, upper, lower, num, sym) {
+            let charset = '';
+            if (upper) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (lower) charset += 'abcdefghijklmnopqrstuvwxyz';
+            if (num) charset += '0123456789';
+            if (sym) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            if (!charset) return '';
+            const arr = new Uint8Array(len);
+            crypto.getRandomValues(arr);
+            return Array.from(arr, i => charset[i % charset.length]).join('');
+        }
+
+        function strength(pw) {
+            let s = 0;
+            if (pw.length >= 12) s++; if (pw.length >= 20) s++;
+            if (/[a-z]/.test(pw)) s++; if (/[A-Z]/.test(pw)) s++;
+            if (/[0-9]/.test(pw)) s++; if (/[^a-zA-Z0-9]/.test(pw)) s++;
+            return Math.min(s, 5);
+        }
+
+        let entries = [], masterPw = '', nextId = 1, searchTerm = '', categoryFilter = '';
+
+        const authBlock = document.getElementById('authBlock');
+        const vaultBlock = document.getElementById('vaultBlock');
+        const authTitle = document.getElementById('authTitle');
+        const unlockBtn = document.getElementById('unlockBtn');
+        const setupBtn = document.getElementById('setupBtn');
+        const authError = document.getElementById('authError');
+        const masterInput = document.getElementById('masterInput');
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilterEl = document.getElementById('categoryFilter');
+        const entriesList = document.getElementById('entriesList');
+        const entryFormCard = document.getElementById('entryFormCard');
+        const formTitle = document.getElementById('formTitle');
+        const entryForm = document.getElementById('entryForm');
+        const entryId = document.getElementById('entryId');
+        const entryName = document.getElementById('entryName');
+        const entryUsername = document.getElementById('entryUsername');
+        const entryPassword = document.getElementById('entryPassword');
+        const entryCategory = document.getElementById('entryCategory');
+        const genModal = document.getElementById('genModal');
+        const genLen = document.getElementById('genLen');
+        const genOut = document.getElementById('genOut');
+        const genUse = document.getElementById('genUse');
+
+        function init() {
+            if (getStored()) {
+                authTitle.textContent = 'Вход в хранилище';
+                unlockBtn.classList.remove('hidden');
+                setupBtn.classList.add('hidden');
+            } else {
+                authTitle.textContent = 'Создание хранилища';
+                unlockBtn.classList.add('hidden');
+                setupBtn.classList.remove('hidden');
+            }
+            authError.textContent = '';
+            masterInput.value = '';
+        }
+
+        async function unlock() {
+            const pw = masterInput.value.trim();
+            if (!pw) return;
+            try {
+                entries = await loadVault(pw);
+                nextId = entries.length ? Math.max(...entries.map(e => e.id)) + 1 : 1;
+                masterPw = pw;
+                authBlock.classList.add('hidden');
+                vaultBlock.classList.remove('hidden');
+                authError.textContent = '';
+                render();
+            } catch (e) {
+                authError.textContent = e.message;
+            }
+        }
+
+        async function setup() {
+            const pw = masterInput.value.trim();
+            if (!pw || pw.length < 8) {
+                authError.textContent = 'Минимум 8 символов для мастер-пароля';
+                return;
+            }
+            entries = [];
+            await saveVault([], pw);
+            masterPw = pw;
+            nextId = 1;
+            authBlock.classList.add('hidden');
+            vaultBlock.classList.remove('hidden');
+            authError.textContent = '';
+            render();
+        }
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s ?? '';
+            return d.innerHTML;
+        }
+
+        function filtered() {
+            let list = entries;
+            if (categoryFilter) list = list.filter(e => (e.category || '').toLowerCase() === categoryFilter.toLowerCase());
+            if (searchTerm) {
+                const t = searchTerm.toLowerCase();
+                list = list.filter(e =>
+                    (e.name || '').toLowerCase().includes(t) ||
+                    (e.username || '').toLowerCase().includes(t) ||
+                    (e.category || '').toLowerCase().includes(t)
+                );
+            }
+            return list;
+        }
+
+        function render() {
+            const cats = [...new Set(entries.map(e => (e.category || '').trim()).filter(Boolean))].sort();
+            categoryFilterEl.innerHTML = '<span class="category-chip' + (categoryFilter === '' ? ' active' : '') + '" data-cat="">Все</span>' +
+                cats.map(c => `<span class="category-chip${categoryFilter === c ? ' active' : ''}" data-cat="${esc(c)}">${esc(c)}</span>`).join('');
+
+            categoryFilterEl.querySelectorAll('.category-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    categoryFilterEl.querySelectorAll('.category-chip').forEach(x => x.classList.remove('active'));
+                    chip.classList.add('active');
+                    categoryFilter = chip.dataset.cat || '';
+                    render();
+                });
+            });
+
+            const list = filtered();
+            if (!list.length) {
+                entriesList.innerHTML = '<div class="empty-state">Нет записей</div>';
+                return;
+            }
+
+            entriesList.innerHTML = list.map(e => `
+                <div class="entry-item" data-id="${e.id}">
+                    <div class="entry-info">
+                        <h3>${esc(e.name)} ${e.category ? `<span class="category-badge">${esc(e.category)}</span>` : ''}</h3>
+                        <span class="username">${esc(e.username)}</span>
+                    </div>
+                    <div class="entry-actions">
+                        <span class="password-display">••••••••</span>
+                        <button class="action-btn copy" title="Копировать пароль" data-id="${e.id}"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn edit" title="Редактировать" data-id="${e.id}"><i class="fas fa-pen"></i></button>
+                        <button class="action-btn delete" title="Удалить" data-id="${e.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            entriesList.querySelectorAll('.copy').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ent = entries.find(x => x.id === parseInt(btn.dataset.id));
+                    if (ent && ent.password) {
+                        navigator.clipboard.writeText(ent.password).then(() => {
+                            btn.querySelector('i').className = 'fas fa-check';
+                            setTimeout(() => { btn.querySelector('i').className = 'fas fa-copy'; }, 1500);
+                        });
+                    }
+                });
+            });
+
+            entriesList.querySelectorAll('.edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ent = entries.find(x => x.id === parseInt(btn.dataset.id));
+                    if (ent) openForm(ent);
+                });
+            });
+
+            entriesList.querySelectorAll('.delete').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Удалить запись?')) return;
+                    const id = parseInt(btn.dataset.id);
+                    entries = entries.filter(e => e.id !== id);
+                    await saveVault(entries, masterPw);
+                    render();
+                });
+            });
+        }
+
+        function openForm(entry = null) {
+            entryFormCard.classList.remove('hidden');
+            if (entry) {
+                formTitle.textContent = 'Редактирование';
+                entryId.value = entry.id;
+                entryName.value = entry.name || '';
+                entryUsername.value = entry.username || '';
+                entryPassword.value = entry.password || '';
+                entryCategory.value = entry.category || '';
+            } else {
+                formTitle.textContent = 'Новая запись';
+                entryId.value = '';
+                entryName.value = '';
+                entryUsername.value = '';
+                entryPassword.value = '';
+                entryCategory.value = '';
+            }
+        }
+
+        entryForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = entryId.value ? parseInt(entryId.value) : nextId++;
+            const name = entryName.value.trim() || 'Без названия';
+            const username = entryUsername.value.trim();
+            const password = entryPassword.value;
+            const category = entryCategory.value.trim();
+
+            const rec = { id, name, username, password, category };
+            const idx = entries.findIndex(x => x.id === id);
+            if (idx >= 0) entries[idx] = rec;
+            else { entries.push(rec); nextId++; }
+
+            await saveVault(entries, masterPw);
+            entryFormCard.classList.add('hidden');
+            render();
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => entryFormCard.classList.add('hidden'));
+        document.getElementById('addBtn').addEventListener('click', () => openForm());
+
+        searchInput.addEventListener('input', e => {
+            searchTerm = e.target.value.trim();
+            render();
+        });
+
+        masterInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') getStored() ? unlock() : setup();
+        });
+
+        unlockBtn.addEventListener('click', unlock);
+        setupBtn.addEventListener('click', setup);
+
+        document.getElementById('clearAllBtn').addEventListener('click', async () => {
+            if (!confirm('Удалить все записи? Это действие необратимо.')) return;
+            if (!confirm('Вы уверены? Все пароли будут удалены безвозвратно.')) return;
+            entries = [];
+            nextId = 1;
+            await saveVault([], masterPw);
+            render();
+            alert('База данных очищена.');
+        });
+
+        document.getElementById('changeMasterBtn').addEventListener('click', async () => {
+            const np = prompt('Новый мастер-пароль:');
+            if (np && np.trim()) {
+                await saveVault(entries, np.trim());
+                masterPw = np.trim();
+                alert('Мастер-пароль изменён');
+            }
+        });
+
+        function parseCSVLine(line) {
+            const r = []; let f = ''; let q = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (c === '"' && (i === 0 || line[i - 1] !== '\\')) q = !q;
+                else if (c === ',' && !q) { r.push(f); f = ''; }
+                else f += c;
+            }
+            r.push(f);
+            return r.map(x => x.trim());
+        }
+
+        const ENCRYPTED_MAGIC = { SecureVault: true, encrypted: true, version: 1 };
+
+        async function exportEncrypted(plaintext, filename) {
+            const enc = await encrypt(plaintext, masterPw);
+            const envelope = { ...ENCRYPTED_MAGIC, salt: enc.salt, iv: enc.iv, data: enc.data };
+            const blob = new Blob([JSON.stringify(envelope)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function isEncrypted(obj) {
+            return obj && obj.encrypted === true && obj.salt && obj.iv && obj.data;
+        }
+
+        function buildYandexCSV(entriesList) {
+            const BOM = '\uFEFF';
+            const header = 'url,username,password,name,extra';
+            const rows = entriesList.map(e => {
+                const url = (e.name || '').startsWith('http') ? e.name : 'https://' + (e.name || '').replace(/^https?:\/\//, '');
+                return `"${(url || '').replace(/"/g, '""')}","${(e.username || '').replace(/"/g, '""')}","${(e.password || '').replace(/"/g, '""')}","${(e.name || '').replace(/"/g, '""')}","${(e.category || '').replace(/"/g, '""')}"`;
+            });
+            return BOM + header + '\n' + rows.join('\n');
+        }
+
+        function exportYandexCSV() {
+            const csv = buildYandexCSV(entries);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `passwords_yandex_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        async function exportJSONEncrypted() {
+            await exportEncrypted(JSON.stringify(entries, null, 2), `securevault_backup_${new Date().toISOString().slice(0, 10)}.securevault.json`);
+        }
+
+        async function exportCSVEncrypted() {
+            await exportEncrypted(buildYandexCSV(entries), `securevault_backup_${new Date().toISOString().slice(0, 10)}.securevault.csv`);
+        }
+
+        function importYandexCSV(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            if (lines.length < 2) throw new Error('Файл пуст или некорректен');
+            const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+            const urlIdx = headers.findIndex(h => h.includes('url') || h.includes('name'));
+            const userIdx = headers.findIndex(h => h.includes('user') || h.includes('login'));
+            const passIdx = headers.findIndex(h => h.includes('pass'));
+            const nameIdx = headers.findIndex(h => h.includes('name') && !h.includes('user'));
+            const u = urlIdx >= 0 ? urlIdx : 0;
+            const us = userIdx >= 0 ? userIdx : 1;
+            const p = passIdx >= 0 ? passIdx : 2;
+            const n = nameIdx >= 0 ? nameIdx : u;
+
+            for (let i = 1; i < lines.length; i++) {
+                const v = parseCSVLine(lines[i]);
+                if (v.length <= Math.max(u, us, p)) continue;
+                const url = v[u] || '';
+                const name = (n >= 0 ? v[n] : url) || url || 'Импорт';
+                entries.push({
+                    id: nextId++,
+                    name: name,
+                    username: v[us] || '',
+                    password: v[p] || '',
+                    category: 'Яндекс.Браузер'
+                });
+            }
+        }
+
+        function importFromJSON(text) {
+            const arr = JSON.parse(text);
+            if (!Array.isArray(arr)) throw new Error('Ожидается массив записей');
+            arr.forEach(e => {
+                entries.push({
+                    id: nextId++,
+                    name: e.name || 'Без названия',
+                    username: e.username || '',
+                    password: e.password || '',
+                    category: e.category || ''
+                });
+            });
+        }
+
+        async function processImport(text, isCsv) {
+            let parsed;
+            try {
+                parsed = JSON.parse(text);
+            } catch {
+                if (isCsv) {
+                    importYandexCSV(text);
+                    alert('Импортировано из CSV');
+                    return;
+                }
+                throw new Error('Некорректный JSON');
+            }
+            if (isEncrypted(parsed)) {
+                const decrypted = await decrypt(parsed, masterPw);
+                if (decrypted.trim().startsWith('[')) {
+                    importFromJSON(decrypted);
+                } else {
+                    importYandexCSV(decrypted);
+                }
+                alert('Импортировано (файл был зашифрован)');
+            } else if (Array.isArray(parsed)) {
+                importFromJSON(text);
+                alert('Импортировано из JSON');
+            } else if (isCsv) {
+                importYandexCSV(text);
+                alert('Импортировано из CSV');
+            } else {
+                throw new Error('Неизвестный формат файла');
+            }
+        }
+
+        const fileInput = document.getElementById('fileInput');
+        fileInput.onchange = async e => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const text = await f.text();
+            try {
+                const isCsv = fileInput.accept.includes('csv') || f.name.toLowerCase().endsWith('.csv') || f.name.toLowerCase().endsWith('.securevault.csv');
+                await processImport(text, isCsv);
+                await saveVault(entries, masterPw);
+                render();
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+            fileInput.value = '';
+        };
+
+        document.getElementById('exportYandexBtn').addEventListener('click', exportYandexCSV);
+        document.getElementById('exportJsonBtn').addEventListener('click', () => exportJSONEncrypted());
+        document.getElementById('exportCsvBtn').addEventListener('click', () => exportCSVEncrypted());
+        document.getElementById('importYandexBtn').addEventListener('click', () => { fileInput.accept = '.csv,.securevault.csv,text/csv'; fileInput.click(); });
+        document.getElementById('importJsonBtn').addEventListener('click', () => { fileInput.accept = '.json,.securevault.json,application/json'; fileInput.click(); });
+        document.getElementById('importCsvBtn').addEventListener('click', () => { fileInput.accept = '.csv,.securevault.csv,text/csv'; fileInput.click(); });
+
+        genBtn.addEventListener('click', () => {
+            genLen.value = 20;
+            document.getElementById('lenVal').textContent = 20;
+            genUpper.checked = genLower.checked = genNum.checked = genSym.checked = true;
+            updateGen();
+            genModal.classList.add('open');
+        });
+
+        genLen.addEventListener('input', () => {
+            document.getElementById('lenVal').textContent = genLen.value;
+            updateGen();
+        });
+
+        ['genUpper', 'genLower', 'genNum', 'genSym'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updateGen);
+        });
+
+        function updateGen() {
+            const len = parseInt(genLen.value);
+            const pass = generatePassword(len, genUpper.checked, genLower.checked, genNum.checked, genSym.checked);
+            genOut.value = pass;
+            const s = strength(pass);
+            const fill = document.getElementById('strengthFill');
+            fill.style.width = (s * 20) + '%';
+            fill.className = 'strength-fill strength-' + ['weak', 'weak', 'fair', 'good', 'strong', 'strong'][s];
+        }
+
+        const genUpper = document.getElementById('genUpper');
+        const genLower = document.getElementById('genLower');
+        const genNum = document.getElementById('genNum');
+        const genSym = document.getElementById('genSym');
+
+        genUse.addEventListener('click', () => {
+            entryPassword.value = genOut.value;
+            entryPassword.type = 'text';
+            setTimeout(() => { entryPassword.type = 'password'; }, 100);
+            genModal.classList.remove('open');
+        });
+
+        document.getElementById('genCopy').addEventListener('click', () => {
+            navigator.clipboard.writeText(genOut.value);
+        });
+
+        document.getElementById('genClose').addEventListener('click', () => genModal.classList.remove('open'));
+
+        init();
+    </script>
+</body>
+</html>
